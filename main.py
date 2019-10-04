@@ -1,4 +1,5 @@
 from crawler import*
+from pdf import*
 
 content = crawler_init()
-#print(content)
+download_pdf(content)

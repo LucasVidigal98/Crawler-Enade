@@ -56,10 +56,9 @@ def crawler_init():
 
 				position_caracter += 1
 
-			links_list.append(str_link[position[0]:position[1]+1])   #Salva o link na lista
+			links_list.append(str_link[position[0]+1:position[1]])   #Salva o link na lista
 			position = list()
 
 		content.update({str_study_area:links_list})                  #Salva a area com seus respctivos links no docionario
-	print(content)
 
 	return content
