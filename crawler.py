@@ -10,6 +10,7 @@ def crawler_init():
 	position = list()									# Salva a informação de onde começa e termina um link			
 	count = 0
 	position_caracter = 0								#Salva a posição do caracteres ', <, >
+	count_areas = 0
 			
 	for info in years:
 
@@ -59,6 +60,10 @@ def crawler_init():
 			links_list.append(str_link[position[0]+1:position[1]])   #Salva o link na lista
 			position = list()
 
-		content.update({str_study_area:links_list})                  #Salva a area com seus respctivos links no docionario
+		if str_study_area in content.keys():		#Salva a area com seus respctivos links no docionario // Vefifica se a área já está no dicit
+			content.update({str(str_study_area + '_' + str(count_areas)):links_list})
+			count_areas += 1
+		else:
+			content.update({str_study_area:links_list})                  
 
 	return content
