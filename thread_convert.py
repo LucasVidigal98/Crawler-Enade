@@ -23,12 +23,3 @@ class ThreadConvert(threading.Thread):
 			for key in self.content_dict.keys():
 				pdf_name = 'Pdfs/Gabarito ' + key + '.pdf'
 				pdf2jpg.convert_pdf2jpg(pdf_name, 'Images/', pages='ALL')
-				
-					
-
-		if self.id_thread == 2:
-
-			for key in self.content_dict.keys():
-				pdf_name = 'Pdfs/Padrão de resposta ' + key + '.pdf'
-				pdf2jpg.convert_pdf2jpg(pdf_name, 'Images/', pages='ALL')
-				

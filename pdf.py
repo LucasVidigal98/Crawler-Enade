@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 import requests
 from pdf2jpg import pdf2jpg
 import os
@@ -26,13 +27,6 @@ def download_pdf(content_dict):
 		except:
 			continue
 
-		try:
-		    with open('Pdfs/' + 'Padrão de resposta ' + str(links_pdf) + '.pdf', "wb") as file:
-		       response = requests.get(str(content_dict[links_pdf][2]))
-		       file.write(response.content)
-		except:
-			continue
-
 def convert_pdf(content_dict):
 
 	try:
@@ -42,7 +36,5 @@ def convert_pdf(content_dict):
 	
 	t_1 = ThreadConvert(0, content_dict)
 	t_2 = ThreadConvert(1, content_dict)
-	t_3 = ThreadConvert(2, content_dict)
 	t_1.start()
 	t_2.start()
-	t_3.start()
