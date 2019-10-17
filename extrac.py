@@ -2,7 +2,36 @@ import os
 from PIL import Image 	# Importando o módulo Pillow para abrir a imagem no script
 import pytesseract 		# Módulo para a utilização da tecnologia OCR
 import pdftotext
+import smtplib
+from email.mime.text import MIMEText
 
+def send_email(i):
+	# conexão com os servidores do google
+	smtp_ssl_host = 'smtp.gmail.com'
+	smtp_ssl_port = 465
+	# username ou email para logar no servidor
+	username = 'pythonmessagelucasufsj@gmail.com'
+	password = 'ticoticonofuba'
+
+	from_addr = 'origin@gmail.com'
+	to_addrs = ['lucasvidigal3@gmail.com']
+
+	# a biblioteca email possuí vários templates
+	# para diferentes formatos de mensagem
+	# neste caso usaremos MIMEText para enviar
+	# somente texto
+	message = MIMEText('Iteração: ' + str(i))
+	message['subject'] = 'Extração de Imagens'
+	message['from'] = from_addr
+	message['to'] = ', '.join(to_addrs)
+
+	# conectaremos de forma segura usando SSL
+	server = smtplib.SMTP_SSL(smtp_ssl_host, smtp_ssl_port)
+	# para interagir com um servidor externo precisaremos
+	# fazer login nele
+	server.login(username, password)
+	server.sendmail(from_addr, to_addrs, message.as_string())
+	server.quit()
 
 # Verifica se é questão discursiva
 def contemDiscursiva(IMAGEM):
@@ -111,7 +140,7 @@ def extractQuestions(dicEnade, ano):
 def workInPage(IMAGEM, diretorio):
 	listQuestoes = []
 	print ('Processando pagina: ', IMAGEM)
-
+	print(IMAGEM)
 	if contemDiscursiva(IMAGEM) == 1:
 		print ("Descartando pagina, contém discursiva")
 		return -1
@@ -196,8 +225,12 @@ def workInPage(IMAGEM, diretorio):
 				# print getQ,"eh o indice atual"
 				imR = im.crop((left, saveTOP+10, right, saveBT-50))
 				
-				print ('SALVANDO: '+diretorio+str(listQuestoes[getQ])+'.jpg')
-				imR.save(diretorio+str(listQuestoes[getQ])+'.jpg')
+				print ('SALVANDO: '+diretorio+'/'+str(listQuestoes[getQ])+'.jpg')
+				print(diretorio)
+				try:
+					imR.save(diretorio+'/'+str(listQuestoes[getQ])+'.jpg')
+				except:
+					pass
 				saveTOP = saveBT = 0
 				# print("1) Get Question "+str(getQ+1)+" Success")
 				getQ+=1
@@ -212,7 +245,10 @@ def workInPage(IMAGEM, diretorio):
 			if(getQ >= len(listQuestoes)):
 				# print listQuestoes, getQ,'\n'
 				qetQ= len(listQuestoes) - 1
-			imR.save(diretorio+'/'+str(listQuestoes[getQ])+'.jpg')
+			try:
+				imR.save(diretorio+'/'+str(listQuestoes[getQ])+'.jpg')
+			except:
+				pass
 			saveTOP = saveBT = 0
 			# print("2) Get Question "+str(getQ)+" Success")
 			getQ+=1
@@ -232,11 +268,16 @@ def	trabalhaNaProva(dirImagens, STORE_FOLDER):
 	numPages = len(imagens)
 	print (numPages, " paginas")
 	for i in range(0,numPages):
-		OK = workInPage(dirImagens+imagens[i], STORE_FOLDER)
+		OK = workInPage(dirImagens+'/'+imagens[i], STORE_FOLDER)
 		
 def init_extract_questions(content):
 		
+		count = 0
 		for key in content.keys():
+
+			if count % 30 == 0:
+				send_email(count)
+
 			images = 'Images/Prova ' + key + '.pdf_dir'
 			if '2009' in images or '2008' in images or '2007' in images or '2006' in images or '2005' in images or '2004' in images:
 				#Se a prova for anterior de 2010 não pega as questões
@@ -248,61 +289,94 @@ def init_extract_questions(content):
 				pass
 
 			dire = 'Questoes/' + key
+			print(images)
 
 			trabalhaNaProva(images, dire)
+			count += 1
 
 def init_extract_answers():
 
 
-	#Fazer for para pegar todos os arquivos
+	for proof in os.listdir(r'Questoes/'):
 
-	try:
-		with open('Gabarito Arquivologia.pdf', 'rb') as file:
-			pdf = pdftotext.PDF(file)
-	except:
-		print('Deu ruim')
-		#Continue
+		try:
+			with open('Pdfs/Gabarito '+str(proof)+'.pdf', 'rb') as file:
+				pdf = pdftotext.PDF(file)
+		except:
+			continue
 
-	found = False
-	for str_page in pdf:
-		for i in range(0, len(str_page)):
-			
-			found_number = False
-			if str_page[i].isdigit() and str_page[i+1].isdigit():
-				print(str(str_page[i]) + '' + str(str_page[i+1]))
+		found = False
+		for str_page in pdf:
+			for i in range(0, len(str_page)):
+				found_number = False
+				if str_page[i].isdigit() and str_page[i+1].isdigit():
+					number = str_page[i] + '' + str_page[i+1]
 
-				carater = i
-				#Pega a resposta da questao da questao
-				while not str_page[carater].isalpha():
-					carater+=1
+					carater = i
+					#Pega a resposta da questao da questao
+					while not str_page[carater].isalpha():
+						carater+=1
 
-				answer = str_page[carater]
-				print(answer)
-				
-				#Verfica a resposta da questão tem mais algum caracter além da própria resposta, se tiver, possivelment a questão foi anulada ou é uma questão discursiva
-				if(str_page[carater+1].isalpha()):
-					#Fazer o módulo para deletar a questao
-					print('SIM')
+					answer = str_page[carater]
+					
+					#Verfica a resposta da questão tem mais algum caracter além da própria resposta, se tiver, possivelment a questão foi anulada ou é uma questão discursiva
+					if(str_page[carater+1].isalpha()):
+						try:
+							with open(r'Questoes/'+str(proof)+'/'+str(number)+'.jpg', 'rb'):
+								os.remove(r'Questoes/'+str(proof)+'/'+str(number)+'.jpg')
+						except:
+							pass
 
-				found_number = True
-			elif found == False and str_page[i].isdigit() and not(str_page[i+1].isdigit()):
-				print(str_page[i])
+					#Verifica se a questão existe
+					try:
+						with open(r'Questoes/'+str(proof)+'/'+str(number)+'.jpg', 'rb'):
+							file_answer = open(r'Questoes/'+str(number)+'_answer.txt', 'w')
+							file_answer.write(str(answer))
+							file_answer.close()
+					except:
+						pass
 
-				carater = i
-				#Pega a resposta da questao da questao
-				while not str_page[carater].isalpha():
-					carater+=1
+					found_number = True
+				elif found == False and str_page[i].isdigit() and not(str_page[i+1].isdigit()):
+					number = str_page[i]
 
-				answer = str_page[carater]
-				print(answer)
+					carater = i
+					#Pega a resposta da questao da questao
+					while not str_page[carater].isalpha():
+						carater+=1
 
-				#Verfica a resposta da questão tem mais algum caracter além da própria resposta, se tiver, possivelment a questão foi anulada ou é uma questão discursiva
-				if(str_page[carater+1].isalpha()):
-					#Fazer o módulo para deletar a questao
-					print('SIM')
+					answer = str_page[carater]
 
-			#Verifica se foi encontrado um numero de dois digitos
-			if found_number == True:
-				found = True
-			else:
-				found = False
+					#Verfica a resposta da questão tem mais algum caracter além da própria resposta, se tiver, possivelment a questão foi anulada ou é uma questão discursiva
+					if(str_page[carater+1].isalpha()):
+						try:
+							with open(r'Questoes/'+str(proof)+'/0'+str(number)+'.jpg', 'rb'):
+								os.remove(r'Questoes/'+str(proof)+'/0'+str(number)+'.jpg')
+						except:
+							try:
+								with open(r'Questoes/'+str(proof)+'/'+str(number)+'.jpg', 'rb'):
+									os.remove(r'Questoes/'+str(proof)+'/'+str(number)+'.jpg')
+							except:
+								pass
+
+					#Verifica se a questão existe
+					try:
+						with open(r'Questoes/'+str(proof)+'/0'+str(number)+'.jpg', 'rb'):
+							file_answer = open(r'Questoes/0'+str(number)+'_answer.txt', 'w')
+							file_answer.write(str(answer))
+							file_answer.close()
+					except:
+
+						try:
+							with open(r'Questoes/'+str(proof)+'/'+str(number)+'.jpg', 'rb'):
+								file_answer = open(r'Questoes/'+str(number)+'_answer.txt', 'w')
+								file_answer.write(str(answer))
+								file_answer.close()
+						except:
+							pass
+
+				#Verifica se foi encontrado um numero de dois digitos
+				if found_number == True:
+					found = True
+				else:
+					found = False
