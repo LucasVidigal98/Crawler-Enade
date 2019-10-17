@@ -1,10 +1,8 @@
 import os
-import sys
-# from pathlib import Path
-from PIL import Image # Importando o módulo Pillow para abrir a imagem no script
-from pdf2jpg import pdf2jpg
-import pytesseract # Módulo para a utilização da tecnologia OCR
-from optparse import OptionParser
+from PIL import Image 	# Importando o módulo Pillow para abrir a imagem no script
+import pytesseract 		# Módulo para a utilização da tecnologia OCR
+import pdftotext
+
 
 # Verifica se é questão discursiva
 def contemDiscursiva(IMAGEM):
@@ -50,7 +48,7 @@ def getNumeroQuestoes(IMAGEM):
 				texto = texto.replace('QUESTAO', 'OK', 1)
 	except:
 		return [], 0
-		print "GetNumeroQuestoes:", list
+		print ("GetNumeroQuestoes:", list)
 	matchQuestao = texto.find('AREA LIVRE')
 	if matchQuestao != -1:
 		return list, 'AL'
@@ -112,10 +110,10 @@ def extractQuestions(dicEnade, ano):
 
 def workInPage(IMAGEM, diretorio):
 	listQuestoes = []
-	print 'Processando pagina: ', IMAGEM
+	print ('Processando pagina: ', IMAGEM)
 
 	if contemDiscursiva(IMAGEM) == 1:
-		print "Descartando pagina, contém discursiva"
+		print ("Descartando pagina, contém discursiva")
 		return -1
 
 	# print "Imagem não descartada ainda"
@@ -198,7 +196,7 @@ def workInPage(IMAGEM, diretorio):
 				# print getQ,"eh o indice atual"
 				imR = im.crop((left, saveTOP+10, right, saveBT-50))
 				
-				print 'SALVANDO: '+diretorio+str(listQuestoes[getQ])+'.jpg'
+				print ('SALVANDO: '+diretorio+str(listQuestoes[getQ])+'.jpg')
 				imR.save(diretorio+str(listQuestoes[getQ])+'.jpg')
 				saveTOP = saveBT = 0
 				# print("1) Get Question "+str(getQ+1)+" Success")
@@ -232,11 +230,11 @@ def	trabalhaNaProva(dirImagens, STORE_FOLDER):
 
 	ID = 0
 	numPages = len(imagens)
-	print numPages, " paginas"
+	print (numPages, " paginas")
 	for i in range(0,numPages):
 		OK = workInPage(dirImagens+imagens[i], STORE_FOLDER)
 		
-def init_extract(content):
+def init_extract_questions(content):
 		
 		for key in content.keys():
 			images = 'Images/Prova ' + key + '.pdf_dir'
@@ -252,4 +250,59 @@ def init_extract(content):
 			dire = 'Questoes/' + key
 
 			trabalhaNaProva(images, dire)
-	
+
+def init_extract_answers():
+
+
+	#Fazer for para pegar todos os arquivos
+
+	try:
+		with open('Gabarito Arquivologia.pdf', 'rb') as file:
+			pdf = pdftotext.PDF(file)
+	except:
+		print('Deu ruim')
+		#Continue
+
+	found = False
+	for str_page in pdf:
+		for i in range(0, len(str_page)):
+			
+			found_number = False
+			if str_page[i].isdigit() and str_page[i+1].isdigit():
+				print(str(str_page[i]) + '' + str(str_page[i+1]))
+
+				carater = i
+				#Pega a resposta da questao da questao
+				while not str_page[carater].isalpha():
+					carater+=1
+
+				answer = str_page[carater]
+				print(answer)
+				
+				#Verfica a resposta da questão tem mais algum caracter além da própria resposta, se tiver, possivelment a questão foi anulada ou é uma questão discursiva
+				if(str_page[carater+1].isalpha()):
+					#Fazer o módulo para deletar a questao
+					print('SIM')
+
+				found_number = True
+			elif found == False and str_page[i].isdigit() and not(str_page[i+1].isdigit()):
+				print(str_page[i])
+
+				carater = i
+				#Pega a resposta da questao da questao
+				while not str_page[carater].isalpha():
+					carater+=1
+
+				answer = str_page[carater]
+				print(answer)
+
+				#Verfica a resposta da questão tem mais algum caracter além da própria resposta, se tiver, possivelment a questão foi anulada ou é uma questão discursiva
+				if(str_page[carater+1].isalpha()):
+					#Fazer o módulo para deletar a questao
+					print('SIM')
+
+			#Verifica se foi encontrado um numero de dois digitos
+			if found_number == True:
+				found = True
+			else:
+				found = False
